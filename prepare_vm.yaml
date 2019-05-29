@@ -1,0 +1,18 @@
+---
+- hosts: virtioservers
+  remote_user: root
+
+  tasks:
+   - name: download_guest_xml
+     get_url: 
+       url: https://raw.githubusercontent.com/redhat-virtio-net/virtio-automation/master/rhel8-vhost-kernel.xml
+       dest: /tmp/rhel8-vhost-kernel.xml
+       mode: 0755
+
+   - name: define_vm
+     virt:
+       command: define
+       xml: /tmp/rhel8-vhost-kernel.xml
+       autostart: no
+    
+
