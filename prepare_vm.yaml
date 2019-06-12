@@ -4,15 +4,33 @@
 
   tasks:
    - name: download_guest_xml
-     get_url: 
+     get_url:
        url: https://raw.githubusercontent.com/redhat-virtio-net/virtio-automation/master/rhel8-vhost-kernel.xml
        dest: /tmp/rhel8-vhost-kernel.xml
        mode: 0755
+
+   - name: download_guest_image
+     get_url:
+       url: http://download.eng.brq.redhat.com/rhel-8/rel-eng/RHEL-8/latest-RHEL-8/compose/BaseOS/x86_64/images/rhel-guest-image-8.0-1854.x86_64.qcow2
+       dest: /var/lib/libvirt/images
+       mode: 0755
+
+   - name: install_libguestfs_tools
+     yum:
+       name: libguestfs-tools
+       state: latest
+
+   - name: prepare_image
+     command: virt-sysprep --root-password password:changeme --uninstall cloud-init --selinux-relabel -a /var/lib/libvirt/images/rhel-guest-image-8.0-1854.x86_64.qcow2
 
    - name: define_vm
      virt:
        command: define
        xml: /tmp/rhel8-vhost-kernel.xml
        autostart: no
-    
 
+   - name: start_vm
+     virt:
+        name: rhel8-test
+        state: running
+        uri: 'qemu:///system'
