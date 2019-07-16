@@ -1,0 +1,65 @@
+---
+# Tasks to prepare the host
+#
+# install repository: no idea if this is the correct repository.
+# TODO: If we're not testing specifig git commits, 
+#       we might want to make this repository a parameter
+- name: install repository
+  yum_repository:
+    name: RHEL-8.0.0
+    description: EPEL YUM repo
+    baseurl: http://download.lab.bos.redhat.com/rel-eng/repos/rhel-8.0.0-candidate/$basearch
+    gpgcheck: no
+
+# TODO: It would be nice to selecively not install the main dependencies but
+# download the code (specific revision) and build it
+- name: install dependencies
+  yum:
+   name:
+    - libvirt
+    - qemu-kvm
+    - dpdk-tools
+   state: present
+
+- name: Check if the image file 
+  stat:
+    path: "{{ local_image_file  }}"
+  register: local_image
+
+- name: Check that the base image exists
+  stat:
+    path: /var/lib/libvirt/images/rhel-base-image-8.0.0.x86_64.qcow2
+  register: base_image
+  when: local_image.stat.exists == False
+
+- name: download base image
+  get_url:
+    url: '{{ remote_image }}'
+    dest: /var/lib/libvirt/images/rhel-base-image-8.0.0.x86_64.qcow2
+    mode: '0640'
+  when:
+    - local_image.stat.exists == False 
+    - base_image.stat.exists == False 
+
+- name: copy base image
+  copy:
+    dest: '{{ local_image_file }}'
+    src: /var/lib/libvirt/images/rhel-base-image-8.0.0.x86_64.qcow2
+    remote_src: true
+  when: local_image.stat.exists == False 
+
+- name: upload public ssh key
+  copy:
+    dest: /tmp/id_rsa.pub
+    src: "{{ guest_pubkey }}"
+  when: local_image.stat.exists == False 
+
+- name: prepare_image
+  command: >
+    virt-sysprep --root-password password:changeme 
+                 --uninstall cloud-init 
+                 --selinux-relabel 
+                 --ssh-inject root:file:/tmp/id_rsa.pub
+                 -a {{ local_image_file }}
+  when: local_image.stat.exists == False 
+

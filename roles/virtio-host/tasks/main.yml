@@ -1,0 +1,12 @@
+---
+# tasks file for host_setup
+#
+#
+- name: Set cmndline
+  import_tasks: grub.yml
+- name: Prepare server
+  import_tasks: prepare.yml
+- name: Run dpdk
+  import_tasks: testmpd.yml
+- name: Run VM
+  import_tasks: virt.yml

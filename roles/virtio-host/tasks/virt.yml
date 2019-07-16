@@ -1,0 +1,74 @@
+---
+# tasks to spin up a vm using libvirt
+- name: install libvirt dependencies
+  yum:
+    name: python3-lxml
+    state: installed
+
+- name: template mgt xml file
+  template:
+    dest: /tmp/mgt-net.xml
+    src: mgt-net.xml.j2 
+    mode: 0600
+
+- name: define mgt network
+  virt_net:
+    command: define
+    name: mgt
+    xml: /tmp/mgt-net.xml
+
+- name: start mgt network
+  virt_net:
+    command: create
+    name: mgt
+
+- name: mkdir /etc/libvirt/hooks
+  file:
+   path: /etc/libvirt/hooks/
+   state: directory
+
+- name: install hook
+  template:
+    dest: /etc/libvirt/hooks/qemu
+    src: ssh_forward.hook.j2
+    mode: 775
+
+- name: restart libvirtd
+  service:
+    name: libvirtd
+    state: restarted
+
+- name: template guest xml file
+  template:
+    dest: /tmp/guest.xml
+    src: guest.xml.j2
+    mode: 0664
+
+# First ensure there is no other vm with the same name
+- name: destroy
+  virt:
+    name: "{{ guest_name }}"
+    state: destroyed
+    uri: 'qemu:///system'
+  ignore_errors: true
+
+- name: undefine guest vm
+  virt:
+    command: undefine
+    name: "{{ guest_name }}"
+  ignore_errors: true
+
+# Define and start guest
+- name: define guest vm
+  virt:
+    command: define
+    xml: "{{ lookup('template', 'guest.xml.j2') }}"
+    autostart: no
+
+- name: start_vm
+  virt:
+    name: "{{ guest_name }}"
+    state: running
+    uri: 'qemu:///system'
+  register: guest
+

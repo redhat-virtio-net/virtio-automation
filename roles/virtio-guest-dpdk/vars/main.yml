@@ -1,0 +1,7 @@
+---
+# vars file for guest-dpdk
+guest_cmdline_options: default_hugepagesz=1G hugepagesz=1G hugepages=1 intel_iommu=on iommu=pt isolcpus=1,2 rcu_nocbs=1,2 nohz_full=1,2
+
+nics:
+ - "0000:00:10.0"
+ - "0000:00:11.0"

@@ -1,0 +1,19 @@
+---
+# vars file for host_setup
+#
+remote_image: http://download.eng.brq.redhat.com/rhel-8/rel-eng/RHEL-8/latest-RHEL-8/compose/BaseOS/x86_64/images/rhel-guest-image-8.1-109.x86_64.qcow2
+local_image_file: /var/lib/libvirt/images/rhel-guest-image-8.0.0.x86_64.qcow2
+#local_image_file: /tmp/rhel-guest-image-8.0.0.x86_64.qcow2
+
+cmdline_options: intel_pstate=disable mce=ignore_ce default_hugepagesz=1G hugepagesz=1G hugepages=6 isolcpus=2-7 rcu_nocbs=2-7 nohz_full=2-7 iommu=pt intel_iommu=on
+
+nics:
+ - "0000:04:00.0"
+ - "0000:04:00.1"
+
+guest_mgt_mac: 52:54:00:f2:2f:4f
+guest_mgt_ip: 192.168.200.10
+guest_pubkey: guest_id_rsa.pub
+
+guest_name: rhel8-bench
+testpmd_session: host-testpmd

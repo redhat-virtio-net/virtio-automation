@@ -1,0 +1,10 @@
+---
+# vars file for pktgen
+
+nics:
+ - "0000:04:00.0"
+ - "0000:04:00.1"
+
+
+trex_url: http://trex-tgn.cisco.com/trex/
+trex_version: latest

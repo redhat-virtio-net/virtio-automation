@@ -1,0 +1,30 @@
+
+- name: Check if needed cmndline options are found
+  shell: grep GRUB_CMDLINE_LINUX /etc/default/grub | grep -c "{{ cmdline_options }}"
+  register: cmdline_opts
+  ignore_errors: true
+
+- name: Edit commandline options
+  lineinfile:
+    dest: /etc/default/grub
+    regexp: 'GRUB_CMDLINE_LINUX="(.*)"'
+    line: 'GRUB_CMDLINE_LINUX="\1 {{ cmdline_options }}"'
+    backrefs: yes
+  when: cmdline_opts.stdout == "0"
+
+- name: update-grub
+  command: grub2-mkconfig –o /boot/grub2/grub.cfg
+  when: cmdline_opts.stdout == "0"
+
+- name: reboot if we need it
+  command: sleep 2 && shutdown -r now "Ansible just modified cmndline options"
+  async: 1 
+  poll: 0
+  ignore_errors: true
+  when: cmdline_opts.stdout == "0"
+
+- name: Wait 600 seconds for target connection to become reachable/usable
+  wait_for_connection:
+  when: cmdline_opts.stdout == "0"
+
+

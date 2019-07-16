@@ -1,0 +1,46 @@
+---
+# tasks file for pktgen
+
+
+- name: ensure kernel-devel package is present
+  yum:
+   name:
+    - kernel-devel
+   state: present
+
+- name: Check t-rex binary exists
+  stat:
+    path: /opt/t-rex/t-rex-64
+  register: trex_binary 
+
+- name: download t-rex
+  get_url:
+    url: '{{ trex_url }}/release/{{ trex_version }}'
+    dest: /tmp/t-rex.tar.gz
+    mode: '0640'
+  when: trex_binary.stat.exists == False
+
+- name: install t-rex (create dirs)
+  file:
+    path: /opt/t-rex
+    state: directory
+    mode: '0755'
+
+- name: install t-rex
+  unarchive:
+    src: /tmp/t-rex.tar.gz
+    dest: /opt/t-rex
+    remote_src: yes
+    extra_opts:
+    - --strip-components=1
+  when: trex_binary.stat.exists == False
+
+- name: Clean installation
+  file:
+    path: /tmp/t-rex.tar.gz
+    state: absent
+  when: trex_binary.stat.exists == False
+
+
+- name: Generate t-rex configuration
+  shell: cd /opt/t-rex && ./dpdk_setup_ports.py -L && ./dpdk_setup_ports.py -c {{ nics | join(' ') }} --force-macs -o /etc/trex_cfg.yaml
