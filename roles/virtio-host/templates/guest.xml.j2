@@ -1,13 +1,33 @@
+
 <domain type='kvm'>
-  <name>rhel8-test1</name>
+  <name>{{ guest_name }}</name>
   <metadata>
     <libosinfo:libosinfo xmlns:libosinfo="http://libosinfo.org/xmlns/libvirt/domain/1.0">
       <libosinfo:os id="http://redhat.com/rhel/8.0"/>
     </libosinfo:libosinfo>
   </metadata>
-  <memory unit='KiB'>2097152</memory>
-  <currentMemory unit='KiB'>2097152</currentMemory>
-  <vcpu placement='static'>1</vcpu>
+  <memory unit='KiB'>4194304</memory>
+  <currentMemory unit='KiB'>4194304</currentMemory>
+   <!-- We should check if enabled in the host -->
+  <memoryBacking>
+    <hugepages>
+      <page size='1048576' unit='KiB' nodeset='0'/>
+    </hugepages>
+    <locked/>
+  </memoryBacking>
+
+   <!-- TODO: Template this part -->
+  <vcpu placement='static'>3</vcpu>
+  <cputune>
+    <vcpupin vcpu='0' cpuset='1'/>
+    <vcpupin vcpu='1' cpuset='6'/>
+    <vcpupin vcpu='2' cpuset='7'/>
+    <emulatorpin cpuset='0'/>
+  </cputune>
+  <numatune>
+    <memory mode='strict' nodeset='0'/>
+  </numatune>
+
   <os>
     <type arch='x86_64' machine='pc-q35-rhel7.6.0'>hvm</type>
     <boot dev='hd'/>
@@ -17,8 +37,13 @@
     <apic/>
   </features>
   <cpu mode='host-model' check='partial'>
+    <topology sockets='1' cores='3' threads='1'/>
     <model fallback='allow'/>
+    <numa>
+      <cell id='0' cpus='0-2' memory='4194304' unit='KiB' memAccess='shared'/>
+    </numa>
   </cpu>
+
   <clock offset='utc'>
     <timer name='rtc' tickpolicy='catchup'/>
     <timer name='pit' tickpolicy='delay'/>
@@ -35,7 +60,7 @@
     <emulator>/usr/libexec/qemu-kvm</emulator>
     <disk type='file' device='disk'>
       <driver name='qemu' type='qcow2'/>
-      <source file='/var/lib/libvirt/images/rhel-guest-image-8.0-1854.x86_64.qcow2'/>
+      <source file='{{ local_image_file }}' />
       <target dev='vda' bus='virtio'/>
       <address type='pci' domain='0x0000' bus='0x04' slot='0x00' function='0x0'/>
     </disk>
@@ -85,11 +110,28 @@
       <address type='pci' domain='0x0000' bus='0x03' slot='0x00' function='0x0'/>
     </controller>
     <interface type='network'>
-      <mac address='52:54:00:f2:2f:4f'/>
-      <source network='default'/>
+      <mac address='{{ guest_mgt_mac }}'/>
+      <source network='mgt'/>
       <model type='virtio'/>
       <address type='pci' domain='0x0000' bus='0x01' slot='0x00' function='0x0'/>
     </interface>
+
+
+    <interface type='vhostuser'>
+      <mac address='56:48:4f:53:54:01'/>
+      <source type='unix' path='/tmp/vhost-user1' mode='client'/>
+      <model type='virtio'/>
+      <driver name='vhost' rx_queue_size='256' />
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x10' function='0x0'/>
+    </interface>
+    <interface type='vhostuser'>
+      <mac address='56:48:4f:53:54:02'/>
+      <source type='unix' path='/tmp/vhost-user2' mode='client'/>
+      <model type='virtio'/>
+      <driver name='vhost' rx_queue_size='256' />
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x11' function='0x0'/>
+    </interface>
+
     <serial type='pty'>
       <target type='isa-serial' port='0'>
         <model name='isa-serial'/>

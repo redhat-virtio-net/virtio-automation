@@ -1,0 +1,54 @@
+---
+# tasks to set up testpmd
+#
+- name: insert vfio modules
+  modprobe:
+    name: vfio-pci
+    state: present
+
+- name: bind NICS to vfio driver
+  command: dpdk-devbind -b vfio-pci {{ item }}
+  loop: "{{ nics }}"
+
+# a nice way to have testpmd running in the background
+# and be able to attach it's terminal for debugging purposes
+# is to run it in a tmux session
+- name: ensure tmux is installed
+  yum:
+   name: tmux
+   state: present
+
+- name: copy testpmd commands
+  copy:
+    src: testpmd.commands
+    dest: /tmp/testpmd.commands
+
+- name: killing existing instances of testpmd
+  shell: pgrep testpmd | xargs kill
+  ignore_errors: true
+
+- name: run testpmd in host
+  shell: >
+       rm -f /tmp/vhost-user{1,2};
+       tmux kill-session -t {{ testpmd_session }};
+       tmux new-session -s {{ testpmd_session }} -d
+       "testpmd -l 0,2,3,4,5
+       --socket-mem=1024
+       -n 4
+       --vdev 'net_vhost0,iface=/tmp/vhost-user1'
+       --vdev 'net_vhost1,iface=/tmp/vhost-user2'
+       --
+       --portmask=f
+       -i
+       --rxq=1
+       --txq=1
+       --nb-cores=4
+       --forward-mode=io
+       --cmdline-file=/tmp/testpmd.commands";
+  register: testpmd
+
+- debug:
+    msg: "{{ testpmd.stdout }}"
+- debug:
+    msg: "{{ testpmd.stderr }}"
+

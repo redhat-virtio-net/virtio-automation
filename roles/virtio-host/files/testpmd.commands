@@ -1,0 +1,3 @@
+set portlist 0,2,1,3
+set fwd io
+start

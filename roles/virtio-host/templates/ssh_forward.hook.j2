@@ -1,0 +1,24 @@
+#!/bin/bash
+# From https://wiki.libvirt.org/page/Networking#NAT_forwarding_.28aka_.22virtual_networks.22.29
+# IMPORTANT: Change the "VM NAME" string to match your actual VM Name.
+# In order to create rules to other VMs, just duplicate the below block and configure
+# it accordingly.
+
+VM_NAME={{ guest_name }}
+
+if [ "${1}" = "{{ guest_name }}" ]; then
+
+   # Update the following variables to fit your setup
+   GUEST_IP={{ guest_mgt_ip }}
+   GUEST_PORT=22
+   HOST_PORT=2222
+
+   if [ "${2}" = "stopped" ] || [ "${2}" = "reconnect" ]; then
+	/sbin/iptables -D FORWARD -o virbr-mgt -d  $GUEST_IP -j ACCEPT
+	/sbin/iptables -t nat -D PREROUTING -p tcp --dport $HOST_PORT -j DNAT --to $GUEST_IP:$GUEST_PORT
+   fi
+   if [ "${2}" = "start" ] || [ "${2}" = "reconnect" ]; then
+	/sbin/iptables -I FORWARD -o virbr-mgt -d  $GUEST_IP -j ACCEPT
+	/sbin/iptables -t nat -I PREROUTING -p tcp --dport $HOST_PORT -j DNAT --to $GUEST_IP:$GUEST_PORT
+   fi
+fi

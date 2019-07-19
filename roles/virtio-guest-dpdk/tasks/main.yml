@@ -1,0 +1,16 @@
+---
+# tasks file for guest-dpdk
+#
+
+- name: install repository
+  yum_repository:
+    name: RHEL-8.0.0
+    description: EPEL YUM repo
+    baseurl: http://download.lab.bos.redhat.com/rel-eng/repos/rhel-8.0.0-candidate/$basearch
+    gpgcheck: no
+
+- name: Update grub and reboot
+  import_tasks: grub.yml
+
+- name: Run dpdk
+  import_tasks: dpdk.yml
